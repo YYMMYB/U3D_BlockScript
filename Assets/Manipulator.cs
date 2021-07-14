@@ -40,5 +40,6 @@ public class TestBlock : IBlock
 {
     public Coord Coord { get; set; }
     public Frame Frame { get; set; }
-    public bool isInFramework { get; set; }
+    public bool isInFrame { get; set; }
+    public int? BindId { get; set; }
 }
