@@ -2,26 +2,27 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Manipulator : MonoBehaviour
 {
     public int tier = 0;
     public float maxAvailableDistance = 8;
     public float properDistance = 4;
-    private Misc.Input.BuildActions BuildInput => GM.Ins.InputManager.Build;
-    private Frame CurFrame => GM.Ins.CurFrame;
-    private Camera CurCam => GM.Ins.CurCam;
+    private Frame CurFrame {get{return GM.Ins.CurFrame;}}
+    private Camera CurCam { get { return GM.Ins.CurCam; } }
 
-    private void Awake(){
-        BuildInput.Act1.performed += OnAct1;
+    private void Update(){
+        if(Input.GetMouseButtonDown(0)){
+            OnAct1();
+        }
     }
 
-    private void OnAct1(InputAction.CallbackContext context){
-        var posSS = BuildInput.ActPos.ReadValue<Vector2>();
+    private void OnAct1(){
+        var posSS = Input.mousePosition;
         var ray = CurCam.ScreenPointToRay(posSS);
         Coord coord;
-        if (CurFrame.RayCast(ray, out var hit, maxAvailableDistance)){
+        Frame.HitInfo hit;
+        if (CurFrame.RayCast(ray, out hit, maxAvailableDistance)){
             coord = CurFrame.COnTier(hit.pointCoord, tier) + hit.normal/2;
         }
         else{
@@ -32,7 +33,6 @@ public class Manipulator : MonoBehaviour
     }
 
     private void OnDestroy(){
-        GM.Ins.InputManager.Build.Act1.performed -= OnAct1;
     }
 }
 

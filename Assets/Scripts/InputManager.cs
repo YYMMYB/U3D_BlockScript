@@ -1,11 +1,7 @@
 ﻿using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class InputManager
 {
-    private Misc.Input _input;
-
-    public Misc.Input.BuildActions Build => _input.Build;
 
     public InputManager(){
         Awake();
@@ -20,14 +16,11 @@ public class InputManager
     }
 
     void Awake(){
-        _input = new Misc.Input();
     }
 
     void OnFocus(){
-        _input.Enable();
     }
 
     void OnLeave(){
-        _input.Disable();
     }
 }

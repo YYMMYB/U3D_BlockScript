@@ -23,11 +23,13 @@ public class Frame : MonoBehaviour
     [Tooltip("物理射线检测允许的偏差")] public float epsilon = 0.005f;
 
     public bool RayCast(Ray ray, out HitInfo hitInfo, float maxDistance){
-        if (Physics.Raycast(ray, out var hit, maxDistance)){
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, maxDistance)){
             for (int i = MinTier; i <= MaxTier; i++){
                 var coordF = Pos2C(hit.point, i);
                 var normal = Dir2C(hit.normal).normalized;
-                if (Blocks.TryGetValue(coordF - normal / 2, out var block)){
+                BlockInfo block;
+                if (Blocks.TryGetValue(coordF - normal / 2, out block)){
                     hitInfo = new HitInfo()
                     {
                         pointCoord = coordF,
@@ -38,7 +40,7 @@ public class Frame : MonoBehaviour
             }
         }
 
-        hitInfo = default;
+        hitInfo = default(HitInfo);
         return false;
     }
 
