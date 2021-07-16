@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Frame : MonoBehaviour {
@@ -75,43 +76,52 @@ public class Frame : MonoBehaviour {
 
     public void AttachBlock(Coord coordF, IBlock block) {
         var coord = (CoordInt) coordF;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (CanAttach(coordF)) {
+            Debug.Log($"在: {this} 的 {coord} 位置, 无法增加方块: {block}");
+        }
+#endif
         coordF = (Coord) coord + Vector3.one * 0.5f;
         var coordScale = SizeOnLevel(coordF.level);
         var posWS = C2Pos(coordF);
         var pos = transform.InverseTransformPoint(posWS);
-        var scale = coordScale * transform.localScale;
+
+        // Render
+        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.transform.SetParent(transform);
+        go.transform.localPosition = pos;
+        go.transform.localRotation = Quaternion.identity;
+        go.transform.localScale = Vector3.one * coordScale;
+
+        var cld = go.GetComponent<Collider>();
+
+        // Data
+        block.isInFrame = true;
+        block.Frame = this;
+        block.Coord = coord;
+        Blocks.Add(coord, new BlockInfo {
+            block = block,
+            collider = cld,
+            go = go,
+        });
+    }
+
+    public bool CanAttach(Coord coordF) {
+        var coord = (CoordInt) coordF;
+        coordF = (Coord) coord + Vector3.one * 0.5f;
+        var coordScale = SizeOnLevel(coordF.level);
+        var posWS = C2Pos(coordF);
+        var scale = coordScale * transform.lossyScale;
         var isCls = Physics.CheckBox(posWS, scale / 2 * (1 - epsilon), transform.rotation);
-        if (!isCls) {
-            // Render
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            // DestroyImmediate(go.GetComponent<Collider>());
-            go.transform.SetParent(transform);
-            go.transform.localPosition = pos;
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one * coordScale;
-
-            // Physics
-            // var cld = gameObject.AddComponent<BoxCollider>();
-            // cld.center = pos;
-            // cld.size = Vector3.one * coordScale;
-            var cld = go.GetComponent<Collider>();
-
-            // Data
-            block.isInFrame = true;
-            block.Frame = this;
-            block.Coord = coord;
-            Blocks.Add(coord, new BlockInfo {
-                block = block,
-                collider = cld,
-                go = go,
-            });
-        }
-        else {
-            Debug.Log($"在: {this} 的 {coord} 位置, 无法增加方块: {block}");
-        }
+        return !isCls;
     }
 
     public IBlock DetachBlock(Coord coord) {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        if (!Blocks.ContainsKey(coord)) {
+            Debug.Log("Frame 中没有方块");
+        }
+#endif
         var data = Blocks[coord];
         Destroy(data.go);
         DestroyImmediate(data.collider);
@@ -125,10 +135,35 @@ public class Frame : MonoBehaviour {
 }
 
 public class FrameCmdMng {
+    private struct RemoveInfo {
+        public IFrameCmdSender sender;
+        public CoordInt target;
+    }
+
+    private struct BindInfo {
+        public IFrameCmdSender sender;
+        public ICollection<CoordInt> target;
+    }
+
+    private struct UnbindInfo {
+        public IFrameCmdSender sender;
+        public ICollection<CoordInt> target;
+    }
+
+    private struct SpawnInfo {
+        public IFrameCmdSender sender;
+        public CoordInt target;
+        public IBlockForm blockForm;
+    }
+
     public Frame Frame;
 
+    private HashSet<BindInfo> bindCmds = new HashSet<BindInfo>();
+    private HashSet<UnbindInfo> unbindCmds = new HashSet<UnbindInfo>();
+    private Dictionary<CoordInt, HashSet<SpawnInfo>> spawnCmds = new Dictionary<CoordInt, HashSet<SpawnInfo>>();
+    private Dictionary<CoordInt, HashSet<RemoveInfo>> removeCmds = new Dictionary<CoordInt, HashSet<RemoveInfo>>();
+
     private Dictionary<int, HashSet<CoordInt>> binds = new Dictionary<int, HashSet<CoordInt>>();
-    
 
     public FrameCmdMng(Frame frame) {
         Frame = frame;
@@ -141,9 +176,9 @@ public class FrameCmdMng {
         return _lastBindId++;
     }
 
-    public void BindBlocksCmd(ICollection<Coord> coords) {
-        var bindIds = new HashSet<int>();
-        var unBindBlocks = new HashSet<CoordInt>();
+    protected void GetBindBlocks(ICollection<CoordInt> coords, out HashSet<int> bindIds, out HashSet<CoordInt> unBindBlocks) {
+        bindIds = new HashSet<int>();
+        unBindBlocks = new HashSet<CoordInt>();
         foreach (var coord in coords) {
             if (!Frame.Blocks.ContainsKey(coord)) {
                 continue;
@@ -159,44 +194,118 @@ public class FrameCmdMng {
                 unBindBlocks.Add(coord);
             }
         }
+    }
 
-        int targetId = 0;
-        if (bindIds.Count > 0) {
-            bool first = true;
-            foreach (var curId in bindIds) {
-                if (first) {
-                    targetId = curId;
-                    first = false;
-                    continue;
+    public void XctBindBlocks() {
+        foreach (var bindCmd in bindCmds) {
+            var coords = bindCmd.target;
+
+            HashSet<int> bindIds;
+            HashSet<CoordInt> unBindBlocks;
+            GetBindBlocks(coords, out bindIds, out unBindBlocks);
+
+            int targetId = 0;
+            if (bindIds.Count > 0) {
+                bool first = true;
+                foreach (var curId in bindIds) {
+                    if (first) {
+                        targetId = curId;
+                        first = false;
+                        continue;
+                    }
+
+                    var targetSet = binds[targetId];
+                    var curSet = binds[curId];
+                    targetSet.UnionWith(curSet);
+                    foreach (var coord in curSet) {
+                        Frame.Blocks[coord].block.BindId = targetId;
+                    }
+
+                    binds.Remove(curId);
                 }
 
-                var targetSet = binds[targetId];
-                var curSet = binds[curId];
-                targetSet.UnionWith(curSet);
-                foreach (var coord in curSet) {
-                    Frame.Blocks[coord].block.BindId = targetId;
+                foreach (var coordInt in unBindBlocks) {
+                    var targetSet = binds[targetId];
+                    targetSet.Add(coordInt);
+                    Frame.Blocks[coordInt].block.BindId = targetId;
                 }
-
-                binds.Remove(curId);
             }
-
-            foreach (var coordInt in unBindBlocks) {
-                var targetSet = binds[targetId];
-                targetSet.Add(coordInt);
-                Frame.Blocks[coordInt].block.BindId = targetId;
+            else {
+                targetId = GetNewBindId();
+                binds.Add(targetId, unBindBlocks);
             }
         }
-        else {
-            targetId = GetNewBindId();
-            binds.Add(targetId, unBindBlocks);
+    }
+
+    public void XctRemoveBlocks() {
+        var coords = removeCmds.Keys;
+        HashSet<int> bindIds;
+        HashSet<CoordInt> unBindBlocks;
+        GetBindBlocks(coords, out bindIds, out unBindBlocks);
+
+        foreach (var bindId in bindIds) {
+            foreach (var coordInt in binds[bindId]) {
+                Frame.DetachBlock(coordInt);
+            }
         }
+
+        foreach (var coordInt in unBindBlocks) {
+            Frame.DetachBlock(coordInt);
+        }
+    }
+
+    public void XctSpawnBlocks() {
+        foreach (var kv in spawnCmds) {
+            var coord = kv.Key;
+            var cmds = kv.Value;
+            if (cmds.Count == 1) {
+                if (Frame.CanAttach(coord)) {
+                    var block = new TestBlock();
+                    Frame.AttachBlock(coord, block);
+                }
+            }
+            else {
+                if (cmds.Count > 1)
+                    Debug.Log("在 " + coord + " 无法 Spawn 多个方块");
+            }
+        }
+    }
+
+    public void BindBlocksCmd(IFrameCmdSender sender, ICollection<CoordInt> target) {
+        var info = new BindInfo() {
+            sender = sender,
+            target = target,
+        };
+        bindCmds.Add(info);
     }
 
     public void SpawnBlockCmd(IFrameCmdSender sender, Coord target, IBlockForm blockForm) {
+        var info = new SpawnInfo() {
+            sender = sender,
+            target = target,
+            blockForm = blockForm,
+        };
+        HashSet<SpawnInfo> infos;
+        if (!spawnCmds.TryGetValue(target, out infos)) {
+            infos = new HashSet<SpawnInfo>();
+            spawnCmds.Add(target, infos);
+        }
+
+        infos.Add(info);
     }
+
     public void RemoveBlockCmd(IFrameCmdSender sender, Coord target) {
-    }
-    public void MoveBlockCmd(IFrameCmdSender sender, Coord from, Vector3 displacement) {
+        var info = new RemoveInfo() {
+            sender = sender,
+            target = target,
+        };
+        HashSet<RemoveInfo> infos;
+        if (!removeCmds.TryGetValue(target, out infos)) {
+            infos = new HashSet<RemoveInfo>();
+            removeCmds.Add(target, infos);
+        }
+
+        infos.Add(info);
     }
 
     // 这个地方还是换成 Playable 做吧
@@ -223,21 +332,36 @@ public class FrameCmdMng {
     IEnumerator XctDelayedInstantStage() {
         yield return null;
     }
-    
-    
 
     public void ExecuteAllCmd() {
+        XctBindBlocks();
+        XctRemoveBlocks();
+        XctSpawnBlocks();
+        ClearAllCmds();
+    }
+
+    void ClearAllCmds() {
+        bindCmds.Clear();
+        spawnCmds.Clear();
+        removeCmds.Clear();
     }
 }
 
 public interface IBlockForm {
-    
 }
+
 public interface IBlock {
+    void InitForm(IBlockForm form);
+    IBlockForm Form { get; }
     Coord Coord { get; set; }
     Frame Frame { get; set; }
     bool isInFrame { get; set; }
     int? BindId { get; set; }
+}
+
+public interface IBlock<T> : IBlock
+    where T : IBlockForm {
+    T Form { get; }
 }
 
 public interface IFrameCmdSender {
