@@ -9,11 +9,13 @@ public class SSBuild : MonoBehaviour
 {
     public Frame InitFrame;
     public Camera InitCamera;
+    public Manipulator Manipulator;
 
     // TODO 加载时, 无法保证最先执行
     private void Awake(){
         GM.Ins.CurFrame = InitFrame;
         GM.Ins.CurCam = InitCamera;
+        GM.Ins.Manipulator = Manipulator;
     }
 
     // TODO 卸载场景的处理. OnDestroy 无法保证最后执行

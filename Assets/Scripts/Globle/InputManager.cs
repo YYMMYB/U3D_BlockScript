@@ -30,4 +30,12 @@ public class InputManager
     void OnLeave(){
         _input.Disable();
     }
+
+    public void Enable() {
+        _input.Enable();
+    }
+
+    public void Disable() {
+        _input.Disable();
+    }
 }

@@ -248,6 +248,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   InitFrame: {fileID: 767883190}
   InitCamera: {fileID: 1965929600}
+  Manipulator: {fileID: 607767533}
 --- !u!4 &607767532
 Transform:
   m_ObjectHideFlags: 0
@@ -277,6 +278,10 @@ MonoBehaviour:
   tier: 0
   maxAvailableDistance: 9999
   properDistance: 4
+  actTotalCount: 10
+  blockTotalCount: 20
+  actType: 0
+  blockType: 0
 --- !u!1 &767883189
 GameObject:
   m_ObjectHideFlags: 0

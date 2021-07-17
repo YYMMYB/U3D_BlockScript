@@ -77,7 +77,10 @@ public class Frame : MonoBehaviour {
         var coord = (CoordInt) coordF;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!CanAttach(coordF)) {
-            Debug.Log($"在: {this} 的 {coord} 位置, 无法增加方块: {block}");
+            Debug.Log($"在: {this} 的 {coord} 位置, !无法!增加方块: {block}");
+        }
+        else {
+            Debug.Log($"在: {this} 的 {coord} 位置, 可以增加方块: {block}");
         }
 #endif
         coordF = (Coord) coord + Vector3.one * 0.5f;

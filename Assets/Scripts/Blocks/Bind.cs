@@ -1,5 +1,5 @@
 ﻿namespace Blocks {
-    public class Bind : IBlock<BlockForms.Bind> {
+    public class Bind : IBlock<BlockForms.Bind> , IFrameCmdSender{
         public void InitForm(IBlockForm form) {
             Form = form as BlockForms.Bind;
         }

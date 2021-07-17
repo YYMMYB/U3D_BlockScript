@@ -42,7 +42,7 @@ namespace Misc
                     ""id"": ""51e9e6ec-e015-455a-b7b6-808358903ebb"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
-                    ""interactions"": ""Tap""
+                    ""interactions"": """"
                 },
                 {
                     ""name"": ""Act2"",

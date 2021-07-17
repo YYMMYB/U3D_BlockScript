@@ -12,6 +12,7 @@ public class GM : MonoBehaviour
     public InputManager InputManager;
     public Frame CurFrame;
     public Camera CurCam;
+    public Manipulator Manipulator;
 
     public event Action EStart;
     public event Action EPause;
