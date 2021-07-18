@@ -33,7 +33,7 @@ public class SSUI : MonoBehaviour {
         }
 
         var sb = new StringBuilder();
-        sb.Append("操作说明: 目前没有时间, 按空格会执行命令");
+        sb.AppendLine("操作说明: 目前没有时间, 按空格会执行命令");
         sb.Append("动作(1,2键修改): ");
         sb.AppendLine(Manipulator.actType.ToString());
         sb.Append("方块(滚轮修改): ");
