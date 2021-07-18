@@ -53,6 +53,14 @@ namespace Misc
                     ""interactions"": """"
                 },
                 {
+                    ""name"": ""Act3"",
+                    ""type"": ""Button"",
+                    ""id"": ""07276101-34c2-449e-9bb1-93dfe790712b"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
                     ""name"": ""ActPos"",
                     ""type"": ""Value"",
                     ""id"": ""304bcd00-22cb-4d97-a703-ff60a2cb1825"",
@@ -294,6 +302,17 @@ namespace Misc
                     ""action"": ""Change"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""22bd102e-4c1b-4027-9c38-843f374ab85e"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Act3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -306,6 +325,7 @@ namespace Misc
             m_Build_Fly = m_Build.FindAction("Fly", throwIfNotFound: true);
             m_Build_Act1 = m_Build.FindAction("Act1", throwIfNotFound: true);
             m_Build_Act2 = m_Build.FindAction("Act2", throwIfNotFound: true);
+            m_Build_Act3 = m_Build.FindAction("Act3", throwIfNotFound: true);
             m_Build_ActPos = m_Build.FindAction("ActPos", throwIfNotFound: true);
             m_Build_Look = m_Build.FindAction("Look", throwIfNotFound: true);
             m_Build_Scroll = m_Build.FindAction("Scroll", throwIfNotFound: true);
@@ -363,6 +383,7 @@ namespace Misc
         private readonly InputAction m_Build_Fly;
         private readonly InputAction m_Build_Act1;
         private readonly InputAction m_Build_Act2;
+        private readonly InputAction m_Build_Act3;
         private readonly InputAction m_Build_ActPos;
         private readonly InputAction m_Build_Look;
         private readonly InputAction m_Build_Scroll;
@@ -375,6 +396,7 @@ namespace Misc
             public InputAction @Fly => m_Wrapper.m_Build_Fly;
             public InputAction @Act1 => m_Wrapper.m_Build_Act1;
             public InputAction @Act2 => m_Wrapper.m_Build_Act2;
+            public InputAction @Act3 => m_Wrapper.m_Build_Act3;
             public InputAction @ActPos => m_Wrapper.m_Build_ActPos;
             public InputAction @Look => m_Wrapper.m_Build_Look;
             public InputAction @Scroll => m_Wrapper.m_Build_Scroll;
@@ -400,6 +422,9 @@ namespace Misc
                     @Act2.started -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct2;
                     @Act2.performed -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct2;
                     @Act2.canceled -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct2;
+                    @Act3.started -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct3;
+                    @Act3.performed -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct3;
+                    @Act3.canceled -= m_Wrapper.m_BuildActionsCallbackInterface.OnAct3;
                     @ActPos.started -= m_Wrapper.m_BuildActionsCallbackInterface.OnActPos;
                     @ActPos.performed -= m_Wrapper.m_BuildActionsCallbackInterface.OnActPos;
                     @ActPos.canceled -= m_Wrapper.m_BuildActionsCallbackInterface.OnActPos;
@@ -428,6 +453,9 @@ namespace Misc
                     @Act2.started += instance.OnAct2;
                     @Act2.performed += instance.OnAct2;
                     @Act2.canceled += instance.OnAct2;
+                    @Act3.started += instance.OnAct3;
+                    @Act3.performed += instance.OnAct3;
+                    @Act3.canceled += instance.OnAct3;
                     @ActPos.started += instance.OnActPos;
                     @ActPos.performed += instance.OnActPos;
                     @ActPos.canceled += instance.OnActPos;
@@ -450,6 +478,7 @@ namespace Misc
             void OnFly(InputAction.CallbackContext context);
             void OnAct1(InputAction.CallbackContext context);
             void OnAct2(InputAction.CallbackContext context);
+            void OnAct3(InputAction.CallbackContext context);
             void OnActPos(InputAction.CallbackContext context);
             void OnLook(InputAction.CallbackContext context);
             void OnScroll(InputAction.CallbackContext context);

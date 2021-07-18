@@ -38,6 +38,14 @@
                     "interactions": ""
                 },
                 {
+                    "name": "Act3",
+                    "type": "Button",
+                    "id": "07276101-34c2-449e-9bb1-93dfe790712b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
                     "name": "ActPos",
                     "type": "Value",
                     "id": "304bcd00-22cb-4d97-a703-ff60a2cb1825",
@@ -279,6 +287,17 @@
                     "action": "Change",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "22bd102e-4c1b-4027-9c38-843f374ab85e",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Act3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

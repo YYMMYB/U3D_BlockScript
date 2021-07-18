@@ -65,10 +65,12 @@ public class Frame : MonoBehaviour {
         return pos;
     }
 
+    // 局部坐标系
     public float SizeOnLevel(int tier) {
         return Mathf.Pow(D, tier);
     }
 
+    // 局部坐标系
     public Coord COnTier(Coord coord, int tier) {
         return new Coord(coord.pos / SizeOnLevel(tier - coord.level), tier);
     }
@@ -77,7 +79,7 @@ public class Frame : MonoBehaviour {
         var coord = (CoordInt) coordF;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!CanAttach(coordF)) {
-            Debug.Log($"在: {this} 的 {coord} 位置, !无法!增加方块: {block}");
+            Debug.LogWarning($"在: {this} 的 {coord} 位置, 无法增加方块: {block}");
         }
         else {
             Debug.Log($"在: {this} 的 {coord} 位置, 可以增加方块: {block}");
@@ -129,6 +131,7 @@ public class Frame : MonoBehaviour {
         DestroyImmediate(data.collider);
         Blocks.Remove(coord);
         data.block.isInFrame = false;
+        data.block.Frame = null;
         return data.block;
     }
 

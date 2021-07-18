@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 
 namespace Blocks {
-    public class Bind : IBlock<BlockForms.Bind>, IFrameCmdSender {
+    public class Killer : IBlock<BlockForms.Bind>, IFrameCmdSender {
         private Frame _frame;
 
         public void InitForm(IBlockForm form) {
-            Form = form as BlockForms.Bind;
+            Form = (BlockForms.Bind) form;
         }
 
         public BlockForms.Bind Form { get; protected set; }
@@ -34,10 +34,7 @@ namespace Blocks {
         public int? BindId { get; set; }
 
         public void RegisterCmds() {
-            Frame.CmdMng.BindBlocksCmd(this, new CoordInt[] {
-                Coord + Vector3.up,
-                Coord + Vector3.up * 2,
-            });
+            Frame.CmdMng.RemoveBlockCmd(this, Coord + Vector3.down);
         }
     }
 }

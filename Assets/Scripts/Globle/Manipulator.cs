@@ -19,6 +19,8 @@ public class Manipulator : MonoBehaviour {
 
     private void Awake() {
         BuildInput.Act1.performed += OnAct1;
+        BuildInput.Act2.performed += OnAct2;
+        BuildInput.Act3.performed += OnAct3;
         BuildInput.Change.performed += context => {
             actType +=(int) context.ReadValue<float>();
             actType %= actTotalCount;
@@ -31,6 +33,15 @@ public class Manipulator : MonoBehaviour {
             blockType += blockTotalCount;
             blockType %= blockTotalCount;
         };
+    }
+
+    private void OnAct3(InputAction.CallbackContext obj) {
+        CurFrame.CmdMng.CollectAllCmd();
+        CurFrame.CmdMng.ExecuteAllCmd();
+    }
+
+    private void OnAct2(InputAction.CallbackContext obj) {
+
     }
 
     private void Update() {
@@ -47,8 +58,22 @@ public class Manipulator : MonoBehaviour {
             coord = CurFrame.Pos2C(ray.GetPoint(properDistance), tier);
         }
 
-        CurFrame.AttachBlock(coord, new Blocks.Bind());
+        IBlock block;
+        switch (blockType) {
+            default:
+            case 0:
+                block = new Blocks.TestBlock();
+                break;
+            case 1:
+                block = new Blocks.Bind();
+                break;
+            case 2:
+                block = new Blocks.Killer();
+                break;
+        }
+        CurFrame.AttachBlock(coord, block);
     }
+    
 
     private void OnDestroy() {
         GM.Ins.InputManager.Build.Act1.performed -= OnAct1;

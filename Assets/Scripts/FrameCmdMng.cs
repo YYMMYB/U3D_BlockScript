@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Blocks;
 using UnityEngine;
 
 public class FrameCmdMng {
@@ -24,14 +26,16 @@ public class FrameCmdMng {
         public IBlockForm blockForm;
     }
 
-    public Frame Frame;
+    private Frame Frame;
 
     private HashSet<BindInfo> bindCmds = new HashSet<BindInfo>();
     private HashSet<UnbindInfo> unbindCmds = new HashSet<UnbindInfo>();
     private Dictionary<CoordInt, HashSet<SpawnInfo>> spawnCmds = new Dictionary<CoordInt, HashSet<SpawnInfo>>();
     private Dictionary<CoordInt, HashSet<RemoveInfo>> removeCmds = new Dictionary<CoordInt, HashSet<RemoveInfo>>();
 
-    private Dictionary<int, HashSet<CoordInt>> binds = new Dictionary<int, HashSet<CoordInt>>();
+    private Dictionary<int, HashSet<IBlock>> binds = new Dictionary<int, HashSet<IBlock>>();
+
+    private HashSet<IFrameCmdSender> senders = new HashSet<IFrameCmdSender>();
 
     public FrameCmdMng(Frame frame) {
         Frame = frame;
@@ -44,7 +48,8 @@ public class FrameCmdMng {
         return _lastBindId++;
     }
 
-    protected void GetBindBlocks(ICollection<CoordInt> coords, out HashSet<int> bindIds, out HashSet<CoordInt> unBindBlocks) {
+    protected void GetBindBlocks(ICollection<CoordInt> coords, out HashSet<int> bindIds,
+        out HashSet<CoordInt> unBindBlocks) {
         bindIds = new HashSet<int>();
         unBindBlocks = new HashSet<CoordInt>();
         foreach (var coord in coords) {
@@ -54,9 +59,7 @@ public class FrameCmdMng {
 
             var id = Frame.Blocks[coord].block.BindId;
             if (id.HasValue) {
-                if (!binds.ContainsKey(id.Value)) {
-                    bindIds.Add(id.Value);
-                }
+                bindIds.Add(id.Value);
             }
             else {
                 unBindBlocks.Add(coord);
@@ -64,7 +67,7 @@ public class FrameCmdMng {
         }
     }
 
-    public void XctBindBlocks() {
+    private void XctBindBlocks() {
         foreach (var bindCmd in bindCmds) {
             var coords = bindCmd.target;
 
@@ -85,8 +88,8 @@ public class FrameCmdMng {
                     var targetSet = binds[targetId];
                     var curSet = binds[curId];
                     targetSet.UnionWith(curSet);
-                    foreach (var coord in curSet) {
-                        Frame.Blocks[coord].block.BindId = targetId;
+                    foreach (var block in curSet) {
+                        block.BindId = targetId;
                     }
 
                     binds.Remove(curId);
@@ -94,27 +97,36 @@ public class FrameCmdMng {
 
                 foreach (var coordInt in unBindBlocks) {
                     var targetSet = binds[targetId];
-                    targetSet.Add(coordInt);
+                    targetSet.Add(Frame.Blocks[coordInt].block);
                     Frame.Blocks[coordInt].block.BindId = targetId;
                 }
             }
-            else {
+            else if (unBindBlocks.Count > 0) {
                 targetId = GetNewBindId();
-                binds.Add(targetId, unBindBlocks);
+                var targetSet = new HashSet<IBlock>();
+                foreach (var coordInt in unBindBlocks) {
+                    var block = Frame.Blocks[coordInt].block;
+                    block.BindId = targetId;
+                    targetSet.Add(block);
+                }
+
+                binds.Add(targetId, targetSet);
             }
         }
     }
 
-    public void XctRemoveBlocks() {
+    private void XctRemoveBlocks() {
         var coords = removeCmds.Keys;
         HashSet<int> bindIds;
         HashSet<CoordInt> unBindBlocks;
         GetBindBlocks(coords, out bindIds, out unBindBlocks);
 
         foreach (var bindId in bindIds) {
-            foreach (var coordInt in binds[bindId]) {
-                Frame.DetachBlock(coordInt);
+            foreach (var block in binds[bindId]) {
+                Frame.DetachBlock(block.Coord);
             }
+
+            binds.Remove(bindId);
         }
 
         foreach (var coordInt in unBindBlocks) {
@@ -122,7 +134,7 @@ public class FrameCmdMng {
         }
     }
 
-    public void XctSpawnBlocks() {
+    private void XctSpawnBlocks() {
         foreach (var kv in spawnCmds) {
             var coord = kv.Key;
             var cmds = kv.Value;
@@ -201,6 +213,12 @@ public class FrameCmdMng {
         yield return null;
     }
 
+    public void CollectAllCmd() {
+        foreach (var sender in senders) {
+            sender.RegisterCmds();
+        }
+    }
+
     public void ExecuteAllCmd() {
         XctBindBlocks();
         XctRemoveBlocks();
@@ -212,5 +230,17 @@ public class FrameCmdMng {
         bindCmds.Clear();
         spawnCmds.Clear();
         removeCmds.Clear();
+    }
+
+    public void RigisterSender(IFrameCmdSender sender) {
+        if (!senders.Contains(sender)) {
+            senders.Add(sender);
+        }
+    }
+
+    public void UnrigisterSender(IFrameCmdSender sender) {
+        if (senders.Contains(sender)) {
+            senders.Remove(sender);
+        }
     }
 }
